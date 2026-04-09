@@ -19,11 +19,15 @@ export interface ProcessData {
   molecularWeight: string;
   specificHeatRatio: string;
   compressibility: string;
+  specificGravity: string;
+  viscosity: string;
 }
 
 export interface SizingData {
   scenario: 'BLOCKED' | 'FIRE' | 'THERMAL';
   setPressure: string;
   setPressureUnit: 'PSIG' | 'Kg/cm2';
+  backpressure: string;
+  backpressureUnit: 'PSIG' | 'Kg/cm2';
   overpressure: string;
 }

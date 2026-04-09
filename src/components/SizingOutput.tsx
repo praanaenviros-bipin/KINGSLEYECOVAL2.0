@@ -109,12 +109,24 @@ export function SizingOutput({ results, projectData, processData, sizingData }: 
                 </div>
               </div>
 
-              {/* Metric 4 */}
+              {/* Metric 4: Rated Capacity */}
               <div className="bg-surface-container p-6 rounded-lg border border-outline-variant/20">
+                <h4 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-4">
+                  Rated Capacity
+                </h4>
+                <div className="flex items-center justify-center bg-surface-container-lowest rounded py-4 border border-primary/10">
+                  <span className="text-2xl font-headline font-extrabold text-primary tracking-tight">
+                    {results.ratedCapacity}
+                  </span>
+                </div>
+              </div>
+
+              {/* Metric 5 */}
+              <div className="bg-surface-container p-6 rounded-lg border border-outline-variant/20 sm:col-span-2">
                 <h4 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-4">
                   Recommended Valve Size
                 </h4>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex justify-between items-center bg-surface-container-lowest p-3 rounded">
                     <span className="text-xs text-on-surface-variant font-bold">INLET</span>
                     <span className="text-lg font-headline font-bold text-primary">

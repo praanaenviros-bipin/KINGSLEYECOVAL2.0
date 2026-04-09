@@ -80,19 +80,27 @@ export function generateSizingReport(
   doc.setFontSize(14);
   doc.text('2. Process Conditions', 14, finalY + 15);
   
+  const processBody = [
+    ['Fluid Name', process.fluidName || 'Process Gas', '-'],
+    ['Fluid State', process.state, '-'],
+    ['Relief Rate', process.reliefRate, 'kg/hr'],
+    ['Operating Pressure', process.operatingPressure, 'barg'],
+    ['Operating Temperature', process.operatingTemp, '°C'],
+  ];
+
+  if (process.state === 'GAS') {
+    processBody.push(['Molecular Weight', process.molecularWeight, 'g/mol']);
+    processBody.push(['Specific Heat Ratio (k)', process.specificHeatRatio, '-']);
+    processBody.push(['Compressibility (Z)', process.compressibility, '-']);
+  } else {
+    processBody.push(['Specific Gravity', process.specificGravity, '-']);
+    processBody.push(['Viscosity', process.viscosity, 'cP']);
+  }
+
   autoTable(doc, {
     startY: finalY + 19,
     head: [['Parameter', 'Value', 'Unit']],
-    body: [
-      ['Fluid Name', process.fluidName || 'Process Gas', '-'],
-      ['Fluid State', process.state, '-'],
-      ['Relief Rate', process.reliefRate, 'kg/hr'],
-      ['Operating Pressure', process.operatingPressure, 'barg'],
-      ['Operating Temperature', process.operatingTemp, '°C'],
-      ['Molecular Weight', process.molecularWeight, 'g/mol'],
-      ['Specific Heat Ratio (k)', process.specificHeatRatio, '-'],
-      ['Compressibility (Z)', process.compressibility, '-'],
-    ],
+    body: processBody,
     theme: 'striped',
     headStyles: { fillColor: [0, 51, 102] },
   });
@@ -109,6 +117,7 @@ export function generateSizingReport(
     body: [
       ['Sizing Scenario', sizing.scenario, '-'],
       ['Set Pressure', sizing.setPressure, sizing.setPressureUnit === 'PSIG' ? 'psig' : 'kg/cm²'],
+      ['Backpressure', sizing.backpressure, sizing.backpressureUnit === 'PSIG' ? 'psig' : 'kg/cm²'],
       ['Overpressure', sizing.overpressure, '%'],
     ],
     theme: 'striped',
@@ -123,23 +132,37 @@ export function generateSizingReport(
   doc.text('4. Calculation Summary (API 520 Part 1)', 14, 22);
   
   doc.setFontSize(10);
-  doc.text('Formula used: A = W / (C * Kd * P1 * Kb * Kc) * sqrt(TZ / M)', 14, 30);
+  const formula = process.state === 'GAS' 
+    ? 'Formula: A = W / (C * Kd * P1 * Kb * Kc) * sqrt(TZ / M)'
+    : 'Formula: A = Q / (27.2 * Kd * Kw * Kc * Kv) * sqrt(G / (P1 - P2))';
+  doc.text(formula, 14, 30);
 
   const { intermediates } = results;
+  const calcBody = [
+    ['P1', 'Relieving Pressure', (intermediates.P1 || 0).toFixed(2), 'psig'],
+    ['P2', 'Backpressure', (intermediates.P2 || 0).toFixed(2), 'psig'],
+    ['Kc', 'Combination Correction Factor', (intermediates.Kc || 1.0).toFixed(2), '-'],
+    ['Kd', 'Coefficient of Discharge', (intermediates.Kd || 0.62).toFixed(3), '-'],
+  ];
+
+  if (process.state === 'GAS') {
+    calcBody.push(['W', 'Relief Rate', (intermediates.W || 0).toFixed(2), 'lb/hr']);
+    calcBody.push(['T', 'Relieving Temperature', (intermediates.T || 0).toFixed(2), 'Rankine']);
+    calcBody.push(['C', 'Gas Constant', (intermediates.C || 0).toFixed(2), '-']);
+    calcBody.push(['Kb', 'Capacity Correction Factor', (intermediates.Kb || 1.0).toFixed(2), '-']);
+    calcBody.push(['M', 'Molecular Weight', (intermediates.M || 0).toFixed(2), 'g/mol']);
+    calcBody.push(['Z', 'Compressibility Factor', (intermediates.Z || 1.0).toFixed(3), '-']);
+  } else {
+    calcBody.push(['Q', 'Relief Rate', (intermediates.Q || 0).toFixed(2), 'gpm']);
+    calcBody.push(['G', 'Specific Gravity', (intermediates.G || 1.0).toFixed(3), '-']);
+    calcBody.push(['Kw', 'Backpressure Correction', (intermediates.Kw || 1.0).toFixed(2), '-']);
+    calcBody.push(['Kv', 'Viscosity Correction', (intermediates.Kv || 1.0).toFixed(2), '-']);
+  }
+
   autoTable(doc, {
     startY: 35,
     head: [['Variable', 'Description', 'Value', 'Unit']],
-    body: [
-      ['W', 'Relief Rate', intermediates.W.toFixed(2), 'lb/hr'],
-      ['T', 'Relieving Temperature', intermediates.T.toFixed(2), 'Rankine'],
-      ['P1', 'Upstream Relieving Pressure', intermediates.P1.toFixed(2), 'psia'],
-      ['C', 'Gas Constant', intermediates.C.toFixed(2), '-'],
-      ['Kd', 'Coefficient of Discharge', intermediates.Kd.toFixed(3), '-'],
-      ['Kb', 'Capacity Correction Factor', intermediates.Kb.toFixed(2), '-'],
-      ['Kc', 'Combination Correction Factor', intermediates.Kc.toFixed(2), '-'],
-      ['M', 'Molecular Weight', intermediates.M.toFixed(2), 'g/mol'],
-      ['Z', 'Compressibility Factor', intermediates.Z.toFixed(3), '-'],
-    ],
+    body: calcBody,
     theme: 'grid',
     headStyles: { fillColor: [0, 51, 102] },
   });
@@ -157,6 +180,7 @@ export function generateSizingReport(
       ['Required Area', `${results.requiredArea} in²`],
       ['Selected Orifice', results.orifice],
       ['Selected Area', `${results.selectedArea} in²`],
+      ['Rated Capacity', results.ratedCapacity],
       ['Margin', `${results.margin}%`],
       ['Recommended Inlet Size', results.inletSize],
       ['Recommended Outlet Size', results.outletSize],
@@ -165,10 +189,16 @@ export function generateSizingReport(
     headStyles: { fillColor: [0, 102, 51] }, // Dark Green for results
   });
 
-  // Add watermark to first page as well (need to go back or add it during generation)
-  doc.setPage(1);
-  addWatermark();
+  // Footer with Website and Page Numbers
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text('www.kingsleyindia.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+  }
 
   // Save the PDF
-  doc.save(`Sizing_Report_${project.reportNo || 'Draft'}.pdf`);
+  doc.save(`Kingsley_Sizing_Report_${project.reportNo || 'Draft'}.pdf`);
 }

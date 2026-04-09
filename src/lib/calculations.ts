@@ -7,17 +7,23 @@ export interface SizingResults {
   inletSize: string;
   outletSize: string;
   margin: number;
+  ratedCapacity: string;
   intermediates: {
-    W: number;
-    T: number;
+    W?: number;
+    Q?: number;
+    T?: number;
     P1: number;
-    C: number;
+    P2: number;
+    C?: number;
     Kd: number;
-    Kb: number;
+    Kb?: number;
+    Kw?: number;
     Kc: number;
-    k: number;
-    Z: number;
-    M: number;
+    Kv?: number;
+    k?: number;
+    Z?: number;
+    M?: number;
+    G?: number;
   };
 }
 
@@ -39,16 +45,11 @@ const API_ORIFICES = [
 ];
 
 export function calculateSizing(process: ProcessData, sizing: SizingData): SizingResults {
-  // 1. Convert Units to US Customary for API 520 Formula
   const W_kg_hr = parseFloat(process.reliefRate.replace(/,/g, '')) || 0;
-  const W = W_kg_hr * 2.20462; // lb/hr
+  const W_lb_hr = W_kg_hr * 2.20462;
 
   const T_C = parseFloat(process.operatingTemp) || 0;
-  const T = (T_C * 1.8 + 32) + 459.67; // Rankine
-
-  const k = parseFloat(process.specificHeatRatio) || 1.4;
-  const Z = parseFloat(process.compressibility) || 1.0;
-  const M = parseFloat(process.molecularWeight) || 28.97;
+  const T_R = (T_C * 1.8 + 32) + 459.67;
 
   // Set Pressure conversion
   let P_set_psig = parseFloat(sizing.setPressure) || 0;
@@ -56,24 +57,62 @@ export function calculateSizing(process: ProcessData, sizing: SizingData): Sizin
     P_set_psig = P_set_psig * 14.2233;
   }
 
+  // Backpressure conversion
+  let P2_psig = parseFloat(sizing.backpressure) || 0;
+  if (sizing.backpressureUnit === 'Kg/cm2') {
+    P2_psig = P2_psig * 14.2233;
+  }
+
   const overpressure_pct = parseFloat(sizing.overpressure) || 10;
-  const P1 = P_set_psig * (1 + overpressure_pct / 100) + 14.7; // psia
+  const P1_psig = P_set_psig * (1 + overpressure_pct / 100);
+  const P1_psia = P1_psig + 14.7;
 
-  // 2. Constants
-  const Kd = 0.975; // Effective coefficient of discharge
-  const Kb = 1.0;   // Capacity correction factor (assuming critical flow)
-  const Kc = 1.0;   // Combination correction factor
+  let area = 0;
+  let intermediates: any = { P1: P1_psig, P2: P2_psig, Kc: 1.0 };
+  let ratedCapacityValue = 0;
 
-  // C constant calculation
-  const C = 520 * Math.sqrt(k * Math.pow(2 / (k + 1), (k + 1) / (k - 1)));
+  if (process.state === 'GAS') {
+    const k = parseFloat(process.specificHeatRatio) || 1.4;
+    const Z = parseFloat(process.compressibility) || 1.0;
+    const M = parseFloat(process.molecularWeight) || 28.97;
+    const Kd = 0.975;
+    const Kb = 1.0;
+    const Kc = 1.0;
+    const C = 520 * Math.sqrt(k * Math.pow(2 / (k + 1), (k + 1) / (k - 1)));
 
-  // 3. Area Calculation (API 520 Part 1)
-  // A = W / (C * Kd * P1 * Kb * Kc) * sqrt(T * Z / M)
-  const area = (W / (C * Kd * P1 * Kb * Kc)) * Math.sqrt((T * Z) / M);
+    // A = W / (C * Kd * P1 * Kb * Kc) * sqrt(T * Z / M)
+    area = (W_lb_hr / (C * Kd * P1_psia * Kb * Kc)) * Math.sqrt((T_R * Z) / M);
+    
+    intermediates = { ...intermediates, W: W_lb_hr, T: T_R, C, Kd, Kb, k, Z, M };
 
-  // 4. Select Orifice
+    // Find orifice and calculate rated capacity
+    const selectedOrifice = API_ORIFICES.find(o => o.area >= area) || API_ORIFICES[API_ORIFICES.length - 1];
+    ratedCapacityValue = (selectedOrifice.area * C * Kd * P1_psia * Kb * Kc) / Math.sqrt((T_R * Z) / M);
+    ratedCapacityValue = ratedCapacityValue / 2.20462; // back to kg/hr
+  } else {
+    const G = parseFloat(process.specificGravity) || 1.0;
+    const viscosity = parseFloat(process.viscosity) || 1.0;
+    const Kd = 0.62; // Typical for liquid
+    const Kw = 1.0;  // Assuming conventional valve
+    const Kc = 1.0;
+    const Kv = 1.0;  // Assuming low viscosity for now
+
+    // Q (gpm) = W (lb/hr) / (500 * G)
+    const Q = W_lb_hr / (500 * G);
+
+    // A = Q / (27.2 * Kd * Kw * Kc * Kv) * sqrt(G / (P1 - P2))
+    const deltaP = P1_psig - P2_psig;
+    area = (Q / (27.2 * Kd * Kw * Kc * Kv)) * Math.sqrt(G / Math.max(deltaP, 0.01));
+
+    intermediates = { ...intermediates, Q, Kd, Kw, Kv, G };
+
+    // Find orifice and calculate rated capacity
+    const selectedOrifice = API_ORIFICES.find(o => o.area >= area) || API_ORIFICES[API_ORIFICES.length - 1];
+    const ratedQ = selectedOrifice.area * 27.2 * Kd * Kw * Kc * Kv / Math.sqrt(G / Math.max(deltaP, 0.01));
+    ratedCapacityValue = ratedQ * 500 * G / 2.20462; // back to kg/hr
+  }
+
   const selectedOrifice = API_ORIFICES.find(o => o.area >= area) || API_ORIFICES[API_ORIFICES.length - 1];
-  
   const margin = area > 0 ? ((selectedOrifice.area - area) / area) * 100 : 0;
 
   return {
@@ -83,8 +122,7 @@ export function calculateSizing(process: ProcessData, sizing: SizingData): Sizin
     inletSize: selectedOrifice.inlet,
     outletSize: selectedOrifice.outlet || (parseInt(selectedOrifice.inlet) + 1).toFixed(1) + '"',
     margin: Number(margin.toFixed(2)),
-    intermediates: {
-      W, T, P1, C, Kd, Kb, Kc, k, Z, M
-    }
+    ratedCapacity: ratedCapacityValue.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' kg/hr',
+    intermediates,
   };
 }

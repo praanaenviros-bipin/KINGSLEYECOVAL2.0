@@ -133,6 +133,49 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                   Pressure increase over the set pressure, usually 10% or 21%.
                 </p>
               </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-semibold text-primary">Backpressure</label>
+                  <div className="flex bg-surface-container-high p-0.5 rounded text-[10px] font-bold">
+                    <button
+                      onClick={() => onChange({ backpressureUnit: 'PSIG' })}
+                      className={`px-2 py-0.5 rounded transition-all ${
+                        data.backpressureUnit === 'PSIG'
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'text-on-surface-variant hover:text-primary'
+                      }`}
+                    >
+                      PSIG
+                    </button>
+                    <button
+                      onClick={() => onChange({ backpressureUnit: 'Kg/cm2' })}
+                      className={`px-2 py-0.5 rounded transition-all ${
+                        data.backpressureUnit === 'Kg/cm2'
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'text-on-surface-variant hover:text-primary'
+                      }`}
+                    >
+                      Kg/cm²
+                    </button>
+                  </div>
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={data.backpressure}
+                    onChange={(e) => onChange({ backpressure: e.target.value })}
+                    className="w-full bg-surface-container-highest border-none rounded-sm px-4 py-3 focus:ring-0 focus:bg-surface-container-lowest transition-all text-primary font-medium"
+                    placeholder="0.00"
+                  />
+                  <div className="absolute right-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                    {data.backpressureUnit === 'PSIG' ? 'psig' : 'kg/cm²'}
+                  </div>
+                </div>
+                <p className="text-[11px] text-on-surface-variant">
+                  The static pressure existing at the outlet of a pressure relief device.
+                </p>
+              </div>
             </div>
           </section>
 

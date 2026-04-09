@@ -204,56 +204,92 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                 </div>
               </div>
 
-              {/* Dynamic Inputs: Gas (Active) */}
+              {/* Dynamic Inputs */}
               <div className="space-y-6 pt-4 border-t border-outline-variant/30">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-primary">Gas Properties</span>
+                  <span className="text-xs font-bold text-primary">
+                    {data.state === 'GAS' ? 'Gas Properties' : 'Liquid Properties'}
+                  </span>
                   <span className="h-[1px] flex-grow mx-4 bg-outline-variant/30"></span>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
-                        Molecular Weight
-                      </p>
-                      <input
-                        type="text"
-                        value={data.molecularWeight}
-                        onChange={(e) => onChange({ molecularWeight: e.target.value })}
-                        className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
-                      />
+                
+                {data.state === 'GAS' ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                          Molecular Weight
+                        </p>
+                        <input
+                          type="text"
+                          value={data.molecularWeight}
+                          onChange={(e) => onChange({ molecularWeight: e.target.value })}
+                          className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-on-surface-variant">g/mol</span>
                     </div>
-                    <span className="text-xs font-bold text-on-surface-variant">g/mol</span>
-                  </div>
-                  <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
-                        Specific Heat Ratio (k)
-                      </p>
-                      <input
-                        type="text"
-                        value={data.specificHeatRatio}
-                        onChange={(e) => onChange({ specificHeatRatio: e.target.value })}
-                        className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
-                      />
+                    <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                          Specific Heat Ratio (k)
+                        </p>
+                        <input
+                          type="text"
+                          value={data.specificHeatRatio}
+                          onChange={(e) => onChange({ specificHeatRatio: e.target.value })}
+                          className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-on-surface-variant">Cp/Cv</span>
                     </div>
-                    <span className="text-xs font-bold text-on-surface-variant">Cp/Cv</span>
-                  </div>
-                  <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
-                        Compressibility (Z)
-                      </p>
-                      <input
-                        type="text"
-                        value={data.compressibility}
-                        onChange={(e) => onChange({ compressibility: e.target.value })}
-                        className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
-                      />
+                    <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                          Compressibility (Z)
+                        </p>
+                        <input
+                          type="text"
+                          value={data.compressibility}
+                          onChange={(e) => onChange({ compressibility: e.target.value })}
+                          className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-on-surface-variant">Unitless</span>
                     </div>
-                    <span className="text-xs font-bold text-on-surface-variant">Unitless</span>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                          Specific Gravity
+                        </p>
+                        <input
+                          type="text"
+                          value={data.specificGravity}
+                          onChange={(e) => onChange({ specificGravity: e.target.value })}
+                          className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-on-surface-variant">@ Rel. Temp</span>
+                    </div>
+                    <div className="bg-surface-container-low p-4 rounded-lg flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                          Viscosity
+                        </p>
+                        <input
+                          type="text"
+                          value={data.viscosity}
+                          onChange={(e) => onChange({ viscosity: e.target.value })}
+                          className="bg-transparent border-none p-0 text-primary font-bold text-xl focus:ring-0 w-24"
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-on-surface-variant">cP</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -34,12 +34,16 @@ export default function App() {
     molecularWeight: '28.97',
     specificHeatRatio: '1.40',
     compressibility: '0.985',
+    specificGravity: '1.0',
+    viscosity: '1.0',
   });
 
   const [sizingData, setSizingData] = useState<SizingData>({
     scenario: 'BLOCKED',
     setPressure: '797.7',
     setPressureUnit: 'PSIG',
+    backpressure: '0.00',
+    backpressureUnit: 'PSIG',
     overpressure: '10',
   });
 
