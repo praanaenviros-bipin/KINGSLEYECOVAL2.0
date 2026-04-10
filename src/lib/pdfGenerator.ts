@@ -17,18 +17,18 @@ export function generateSizingReport(
   const addWatermark = () => {
     try {
       doc.saveGraphicsState();
-      const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.1 }) : null;
+      const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.2 }) : null;
       if (gState) {
         doc.setGState(gState);
       } else {
-        doc.setTextColor(240, 240, 240); // Fallback to very light color if GState fails
+        doc.setTextColor(230, 230, 230); // Fallback to light color if GState fails
       }
       doc.setFontSize(60);
-      if (!gState) doc.setTextColor(240, 240, 240);
+      if (!gState) doc.setTextColor(230, 230, 230);
       else doc.setTextColor(150, 150, 150);
       
       doc.setFont('helvetica', 'bold');
-      doc.text('KINGSLEY ECOVAL', pageWidth / 2, pageHeight / 2, {
+      doc.text('KINGSLEY', pageWidth / 2, pageHeight / 2, {
         align: 'center',
         angle: 45,
       });
@@ -36,9 +36,9 @@ export function generateSizingReport(
     } catch (e) {
       // Fallback if graphics state is not supported
       doc.setFontSize(60);
-      doc.setTextColor(240, 240, 240);
+      doc.setTextColor(230, 230, 230);
       doc.setFont('helvetica', 'bold');
-      doc.text('KINGSLEY ECOVAL', pageWidth / 2, pageHeight / 2, {
+      doc.text('KINGSLEY', pageWidth / 2, pageHeight / 2, {
         align: 'center',
         angle: 45,
       });
@@ -83,9 +83,9 @@ export function generateSizingReport(
   const processBody = [
     ['Fluid Name', process.fluidName || 'Process Gas', '-'],
     ['Fluid State', process.state, '-'],
-    ['Relief Rate', process.reliefRate, 'kg/hr'],
-    ['Operating Pressure', process.operatingPressure, 'barg'],
-    ['Operating Temperature', process.operatingTemp, '°C'],
+    ['Relief Rate', process.reliefRate, process.reliefRateUnit],
+    ['Operating Pressure', process.operatingPressure, process.operatingPressureUnit],
+    ['Operating Temperature', process.operatingTemp, process.operatingTempUnit],
   ];
 
   if (process.state === 'GAS') {
@@ -116,8 +116,8 @@ export function generateSizingReport(
     head: [['Parameter', 'Value', 'Unit']],
     body: [
       ['Sizing Scenario', sizing.scenario, '-'],
-      ['Set Pressure', sizing.setPressure, sizing.setPressureUnit === 'PSIG' ? 'psig' : 'kg/cm²'],
-      ['Backpressure', sizing.backpressure, sizing.backpressureUnit === 'PSIG' ? 'psig' : 'kg/cm²'],
+      ['Set Pressure', sizing.setPressure, sizing.setPressureUnit],
+      ['Backpressure', sizing.backpressure, sizing.backpressureUnit],
       ['Overpressure', sizing.overpressure, '%'],
     ],
     theme: 'striped',
@@ -189,13 +189,22 @@ export function generateSizingReport(
     headStyles: { fillColor: [0, 102, 51] }, // Dark Green for results
   });
 
-  // Footer with Website and Page Numbers
+  // Header & Footer on all pages
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+    
+    // Top Header - Company Name
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 51, 102); // Dark Blue
+    doc.text('Kingsley Ecotech Pvt Ltd', pageWidth / 2, 10, { align: 'center' });
+    
+    // Bottom Footer
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(150);
-    doc.text('www.kingsleyindia.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.text('Kingsley Ectoech Pvt Ltd | www.kingsleyindia.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
     doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
   }
 

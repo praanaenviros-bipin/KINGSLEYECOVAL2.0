@@ -1,5 +1,6 @@
 import { Ban, Flame, Thermometer, Info, Construction, TrendingUp, Eye, CheckCircle2 } from 'lucide-react';
-import { SizingData } from '../types';
+import { SizingData, PressureUnit } from '../types';
+import { convertPressure } from '../lib/conversions';
 
 interface FunctionalRequirementsProps {
   data: SizingData;
@@ -8,6 +9,16 @@ interface FunctionalRequirementsProps {
 }
 
 export function FunctionalRequirements({ data, onChange, onNext }: FunctionalRequirementsProps) {
+  const handleUnitChange = (field: 'setPressure' | 'backpressure', newUnit: PressureUnit) => {
+    const currentUnit = field === 'setPressure' ? data.setPressureUnit : data.backpressureUnit;
+    const currentValue = field === 'setPressure' ? data.setPressure : data.backpressure;
+    const newValue = convertPressure(currentValue, currentUnit, newUnit);
+    onChange({ 
+      [field]: newValue, 
+      [`${field}Unit`]: newUnit 
+    });
+  };
+
   const scenarios = [
     { id: 'BLOCKED', label: 'Blocked Discharge', description: 'Relief from closure of outlet valve.', icon: Ban },
     { id: 'FIRE', label: 'Firecase', description: 'External heat exposure analysis.', icon: Flame },
@@ -78,7 +89,7 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                   <label className="block text-sm font-semibold text-primary">Set Pressure</label>
                   <div className="flex bg-surface-container-high p-0.5 rounded text-[10px] font-bold">
                     <button
-                      onClick={() => onChange({ setPressureUnit: 'PSIG' })}
+                      onClick={() => handleUnitChange('setPressure', 'PSIG')}
                       className={`px-2 py-0.5 rounded transition-all ${
                         data.setPressureUnit === 'PSIG'
                           ? 'bg-primary text-white shadow-sm'
@@ -88,7 +99,7 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                       PSIG
                     </button>
                     <button
-                      onClick={() => onChange({ setPressureUnit: 'Kg/cm2' })}
+                      onClick={() => handleUnitChange('setPressure', 'Kg/cm2')}
                       className={`px-2 py-0.5 rounded transition-all ${
                         data.setPressureUnit === 'Kg/cm2'
                           ? 'bg-primary text-white shadow-sm'
@@ -96,6 +107,16 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                       }`}
                     >
                       Kg/cm²
+                    </button>
+                    <button
+                      onClick={() => handleUnitChange('setPressure', 'barg')}
+                      className={`px-2 py-0.5 rounded transition-all ${
+                        data.setPressureUnit === 'barg'
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'text-on-surface-variant hover:text-primary'
+                      }`}
+                    >
+                      bar
                     </button>
                   </div>
                 </div>
@@ -139,7 +160,7 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                   <label className="block text-sm font-semibold text-primary">Backpressure</label>
                   <div className="flex bg-surface-container-high p-0.5 rounded text-[10px] font-bold">
                     <button
-                      onClick={() => onChange({ backpressureUnit: 'PSIG' })}
+                      onClick={() => handleUnitChange('backpressure', 'PSIG')}
                       className={`px-2 py-0.5 rounded transition-all ${
                         data.backpressureUnit === 'PSIG'
                           ? 'bg-primary text-white shadow-sm'
@@ -149,7 +170,7 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                       PSIG
                     </button>
                     <button
-                      onClick={() => onChange({ backpressureUnit: 'Kg/cm2' })}
+                      onClick={() => handleUnitChange('backpressure', 'Kg/cm2')}
                       className={`px-2 py-0.5 rounded transition-all ${
                         data.backpressureUnit === 'Kg/cm2'
                           ? 'bg-primary text-white shadow-sm'
@@ -157,6 +178,16 @@ export function FunctionalRequirements({ data, onChange, onNext }: FunctionalReq
                       }`}
                     >
                       Kg/cm²
+                    </button>
+                    <button
+                      onClick={() => handleUnitChange('backpressure', 'barg')}
+                      className={`px-2 py-0.5 rounded transition-all ${
+                        data.backpressureUnit === 'barg'
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'text-on-surface-variant hover:text-primary'
+                      }`}
+                    >
+                      bar
                     </button>
                   </div>
                 </div>

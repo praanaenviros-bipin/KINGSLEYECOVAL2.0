@@ -1,5 +1,6 @@
 import { Settings2, Info, AlertTriangle, Waves, ChevronRight, Gauge, Droplets } from 'lucide-react';
-import { ProcessData } from '../types';
+import { ProcessData, PressureUnit, TempUnit, FlowUnit } from '../types';
+import { convertPressure, convertTemp, convertFlow } from '../lib/conversions';
 
 interface ProcessConditionsProps {
   data: ProcessData;
@@ -8,6 +9,34 @@ interface ProcessConditionsProps {
 }
 
 export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsProps) {
+  const handlePressureUnitChange = (field: 'operatingPressure' | 'designPressure', newUnit: PressureUnit) => {
+    const currentUnit = field === 'operatingPressure' ? data.operatingPressureUnit : data.designPressureUnit;
+    const currentValue = field === 'operatingPressure' ? data.operatingPressure : data.designPressure;
+    const newValue = convertPressure(currentValue, currentUnit, newUnit);
+    onChange({ 
+      [field]: newValue, 
+      [`${field}Unit`]: newUnit 
+    });
+  };
+
+  const handleTempUnitChange = (field: 'operatingTemp' | 'designTemp', newUnit: TempUnit) => {
+    const currentUnit = field === 'operatingTemp' ? data.operatingTempUnit : data.designTempUnit;
+    const currentValue = field === 'operatingTemp' ? data.operatingTemp : data.designTemp;
+    const newValue = convertTemp(currentValue, currentUnit, newUnit);
+    onChange({ 
+      [field]: newValue, 
+      [`${field}Unit`]: newUnit 
+    });
+  };
+
+  const handleFlowUnitChange = (newUnit: FlowUnit) => {
+    const newValue = convertFlow(data.reliefRate, data.reliefRateUnit, newUnit, parseFloat(data.specificGravity) || 1.0);
+    onChange({ 
+      reliefRate: newValue, 
+      reliefRateUnit: newUnit 
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-12">
       {/* Page Header */}
@@ -36,7 +65,7 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                 Operating & Design
               </h3>
               <span className="bg-surface-container-high text-primary px-3 py-1 rounded text-xs font-bold uppercase tracking-tighter">
-                Calibrated Units: SI
+                Calibrated Units: Multi-Standard
               </span>
             </div>
 
@@ -44,9 +73,20 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
               {/* Pressure Cluster */}
               <div className="space-y-6">
                 <div className="group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    Operating Pressure
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                      Operating Pressure
+                    </label>
+                    <select 
+                      value={data.operatingPressureUnit}
+                      onChange={(e) => handlePressureUnitChange('operatingPressure', e.target.value as PressureUnit)}
+                      className="text-[10px] font-bold bg-surface-container-high border-none rounded px-1 py-0.5 focus:ring-0"
+                    >
+                      <option value="barg">barg</option>
+                      <option value="PSIG">PSIG</option>
+                      <option value="Kg/cm2">Kg/cm²</option>
+                    </select>
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -55,14 +95,25 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                       className="w-full bg-surface-container-highest border-none text-primary font-bold text-lg px-4 py-3 rounded-sm focus:bg-surface-container-lowest focus:ring-0 transition-all border-b-2 border-transparent focus:border-primary"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-on-surface-variant">
-                      barg
+                      {data.operatingPressureUnit}
                     </span>
                   </div>
                 </div>
                 <div className="group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    Design Pressure
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                      Design Pressure
+                    </label>
+                    <select 
+                      value={data.designPressureUnit}
+                      onChange={(e) => handlePressureUnitChange('designPressure', e.target.value as PressureUnit)}
+                      className="text-[10px] font-bold bg-surface-container-high border-none rounded px-1 py-0.5 focus:ring-0"
+                    >
+                      <option value="barg">barg</option>
+                      <option value="PSIG">PSIG</option>
+                      <option value="Kg/cm2">Kg/cm²</option>
+                    </select>
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -71,7 +122,7 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                       className="w-full bg-surface-container-highest border-none text-primary font-bold text-lg px-4 py-3 rounded-sm focus:bg-surface-container-lowest focus:ring-0 transition-all border-b-2 border-transparent focus:border-primary"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-on-surface-variant">
-                      barg
+                      {data.designPressureUnit}
                     </span>
                   </div>
                 </div>
@@ -80,9 +131,20 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
               {/* Temperature Cluster */}
               <div className="space-y-6">
                 <div className="group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    Operating Temp
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                      Operating Temp
+                    </label>
+                    <select 
+                      value={data.operatingTempUnit}
+                      onChange={(e) => handleTempUnitChange('operatingTemp', e.target.value as TempUnit)}
+                      className="text-[10px] font-bold bg-surface-container-high border-none rounded px-1 py-0.5 focus:ring-0"
+                    >
+                      <option value="°C">°C</option>
+                      <option value="°F">°F</option>
+                      <option value="K">K</option>
+                    </select>
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -91,14 +153,25 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                       className="w-full bg-surface-container-highest border-none text-primary font-bold text-lg px-4 py-3 rounded-sm focus:bg-surface-container-lowest focus:ring-0 transition-all border-b-2 border-transparent focus:border-primary"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-on-surface-variant">
-                      °C
+                      {data.operatingTempUnit}
                     </span>
                   </div>
                 </div>
                 <div className="group">
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    Design Temp
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                      Design Temp
+                    </label>
+                    <select 
+                      value={data.designTempUnit}
+                      onChange={(e) => handleTempUnitChange('designTemp', e.target.value as TempUnit)}
+                      className="text-[10px] font-bold bg-surface-container-high border-none rounded px-1 py-0.5 focus:ring-0"
+                    >
+                      <option value="°C">°C</option>
+                      <option value="°F">°F</option>
+                      <option value="K">K</option>
+                    </select>
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -107,7 +180,7 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                       className="w-full bg-surface-container-highest border-none text-primary font-bold text-lg px-4 py-3 rounded-sm focus:bg-surface-container-lowest focus:ring-0 transition-all border-b-2 border-transparent focus:border-primary"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-on-surface-variant">
-                      °C
+                      {data.designTempUnit}
                     </span>
                   </div>
                 </div>
@@ -115,9 +188,19 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
 
               {/* Full Width Relief Rate */}
               <div className="md:col-span-2 bg-surface-container p-6 rounded-lg">
-                <label className="block text-xs font-bold text-on-tertiary-container uppercase tracking-wider mb-3">
-                  Required Relief Rate
-                </label>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-xs font-bold text-on-tertiary-container uppercase tracking-wider">
+                    Required Relief Rate
+                  </label>
+                  <select 
+                    value={data.reliefRateUnit}
+                    onChange={(e) => handleFlowUnitChange(e.target.value as FlowUnit)}
+                    className="text-[10px] font-bold bg-surface-container-lowest border-none rounded px-2 py-1 focus:ring-0"
+                  >
+                    <option value="kg/hr">kg/hr</option>
+                    <option value="m3/hr">m³/hr</option>
+                  </select>
+                </div>
                 <div className="flex items-center gap-4">
                   <div className="relative flex-grow">
                     <input
@@ -127,7 +210,7 @@ export function ProcessConditions({ data, onChange, onNext }: ProcessConditionsP
                       className="w-full bg-surface-container-lowest border-none text-primary font-extrabold text-2xl px-4 py-4 rounded-sm focus:ring-0 border-b-2 border-primary"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-on-surface-variant">
-                      kg/hr
+                      {data.reliefRateUnit}
                     </span>
                   </div>
                   <div className="bg-tertiary-fixed text-on-tertiary-fixed p-4 rounded flex flex-col items-center justify-center min-w-[80px]">

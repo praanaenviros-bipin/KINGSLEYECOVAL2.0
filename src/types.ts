@@ -8,12 +8,21 @@ export interface ProjectData {
   date: string;
 }
 
+export type PressureUnit = 'barg' | 'PSIG' | 'Kg/cm2';
+export type TempUnit = '°C' | '°F' | 'K';
+export type FlowUnit = 'kg/hr' | 'm3/hr';
+
 export interface ProcessData {
   operatingPressure: string;
+  operatingPressureUnit: PressureUnit;
   designPressure: string;
+  designPressureUnit: PressureUnit;
   operatingTemp: string;
+  operatingTempUnit: TempUnit;
   designTemp: string;
+  designTempUnit: TempUnit;
   reliefRate: string;
+  reliefRateUnit: FlowUnit;
   fluidName: string;
   state: 'GAS' | 'LIQUID';
   molecularWeight: string;
@@ -26,8 +35,8 @@ export interface ProcessData {
 export interface SizingData {
   scenario: 'BLOCKED' | 'FIRE' | 'THERMAL';
   setPressure: string;
-  setPressureUnit: 'PSIG' | 'Kg/cm2';
+  setPressureUnit: PressureUnit;
   backpressure: string;
-  backpressureUnit: 'PSIG' | 'Kg/cm2';
+  backpressureUnit: PressureUnit;
   overpressure: string;
 }

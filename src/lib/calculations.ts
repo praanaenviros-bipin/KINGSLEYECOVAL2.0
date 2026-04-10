@@ -1,4 +1,4 @@
-import { ProcessData, SizingData } from '../types';
+import { ProcessData, SizingData, PressureUnit, TempUnit } from '../types';
 
 export interface SizingResults {
   requiredArea: number;
@@ -45,23 +45,37 @@ const API_ORIFICES = [
 ];
 
 export function calculateSizing(process: ProcessData, sizing: SizingData): SizingResults {
-  const W_kg_hr = parseFloat(process.reliefRate.replace(/,/g, '')) || 0;
-  const W_lb_hr = W_kg_hr * 2.20462;
-
-  const T_C = parseFloat(process.operatingTemp) || 0;
-  const T_R = (T_C * 1.8 + 32) + 459.67;
-
-  // Set Pressure conversion
-  let P_set_psig = parseFloat(sizing.setPressure) || 0;
-  if (sizing.setPressureUnit === 'Kg/cm2') {
-    P_set_psig = P_set_psig * 14.2233;
+  // 1. Normalize Flow Rate to lb/hr
+  let W_lb_hr = 0;
+  const reliefRateVal = parseFloat(process.reliefRate.replace(/,/g, '')) || 0;
+  if (process.reliefRateUnit === 'kg/hr') {
+    W_lb_hr = reliefRateVal * 2.20462;
+  } else {
+    // m3/hr to kg/hr using SG, then to lb/hr
+    const sg = parseFloat(process.specificGravity) || 1.0;
+    W_lb_hr = (reliefRateVal * 1000 * sg) * 2.20462;
   }
 
-  // Backpressure conversion
-  let P2_psig = parseFloat(sizing.backpressure) || 0;
-  if (sizing.backpressureUnit === 'Kg/cm2') {
-    P2_psig = P2_psig * 14.2233;
-  }
+  // 2. Normalize Temperature to Rankine
+  const normalizeTempToR = (valStr: string, unit: TempUnit): number => {
+    let val = parseFloat(valStr) || 0;
+    let inC = val;
+    if (unit === '°F') inC = (val - 32) / 1.8;
+    else if (unit === 'K') inC = val - 273.15;
+    return (inC * 1.8 + 32) + 459.67;
+  };
+  const T_R = normalizeTempToR(process.operatingTemp, process.operatingTempUnit);
+
+  // 3. Normalize Pressures to psig
+  const normalizePressureToPsig = (valStr: string, unit: PressureUnit): number => {
+    let val = parseFloat(valStr) || 0;
+    if (unit === 'barg') return val * 14.5038;
+    if (unit === 'Kg/cm2') return val * 14.2233;
+    return val; // already PSIG
+  };
+
+  const P_set_psig = normalizePressureToPsig(sizing.setPressure, sizing.setPressureUnit);
+  const P2_psig = normalizePressureToPsig(sizing.backpressure, sizing.backpressureUnit);
 
   const overpressure_pct = parseFloat(sizing.overpressure) || 10;
   const P1_psig = P_set_psig * (1 + overpressure_pct / 100);
@@ -91,7 +105,6 @@ export function calculateSizing(process: ProcessData, sizing: SizingData): Sizin
     ratedCapacityValue = ratedCapacityValue / 2.20462; // back to kg/hr
   } else {
     const G = parseFloat(process.specificGravity) || 1.0;
-    const viscosity = parseFloat(process.viscosity) || 1.0;
     const Kd = 0.62; // Typical for liquid
     const Kw = 1.0;  // Assuming conventional valve
     const Kc = 1.0;

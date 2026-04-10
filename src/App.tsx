@@ -25,10 +25,15 @@ export default function App() {
 
   const [processData, setProcessData] = useState<ProcessData>({
     operatingPressure: '42.5',
+    operatingPressureUnit: 'barg',
     designPressure: '55.0',
+    designPressureUnit: 'barg',
     operatingTemp: '180',
+    operatingTempUnit: '°C',
     designTemp: '225',
+    designTempUnit: '°C',
     reliefRate: '12,500.00',
+    reliefRateUnit: 'kg/hr',
     fluidName: '',
     state: 'GAS',
     molecularWeight: '28.97',
